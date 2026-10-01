@@ -75,6 +75,22 @@ class QuotesTest {
     }
 
     @Test
+    void aQuoteStaysWithinTheConfiguredFluctuationOfItsBasePrice() {
+        startWith(new ExchangeConfig(PORT, false, 0.0, 0, 0.02));
+
+        for (int i = 0; i < 20; i++) {
+            float price = given().queryParam("symbols", "AAPL")
+                    .when()
+                    .get("/quotes")
+                    .then()
+                    .statusCode(200)
+                    .extract().path("AAPL.price");
+
+            assertTrue(price >= 226.79f && price <= 236.05f, "price out of range: " + price);
+        }
+    }
+
+    @Test
     void returnsQuotesForSeveralSymbolsInOneCall() {
         startWith(noFaults());
 

@@ -9,7 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Executes an order against the hard-coded prices (the same ones served as quotes).
+ * Executes an order at the current quoted price (the same source as the /quotes endpoint).
  * Fill or kill: a BUY executes if the price is at or below the limit, a SELL if it is at or above;
  * otherwise the order is killed.
  * An order for a symbol the exchange does not list is killed too: there is nothing to fill it with.

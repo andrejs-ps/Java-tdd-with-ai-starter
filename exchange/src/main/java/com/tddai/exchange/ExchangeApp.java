@@ -22,7 +22,7 @@ import java.util.random.RandomGenerator;
 
 /**
  * The simulated NYSE exchange. Two endpoints:
- * GET /quotes?symbols=A,B,C (one or more symbols) and POST /orders (fill or kill, at the same hard-coded prices).
+ * GET /quotes?symbols=A,B,C (one or more symbols) and POST /orders (fill or kill, at the same prices as quotes).
  */
 public class ExchangeApp {
 
@@ -49,7 +49,7 @@ public class ExchangeApp {
      */
     public static Javalin create(ExchangeConfig config) {
         Clock clock = Clock.systemUTC();
-        var quotes = new QuoteGenerator(clock);
+        var quotes = new QuoteGenerator(clock, config.priceFluctuation(), RandomGenerator.getDefault());
         var app = new ExchangeApp(
                 new FaultSimulator(config, RandomGenerator.getDefault()),
                 quotes,

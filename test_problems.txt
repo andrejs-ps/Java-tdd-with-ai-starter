@@ -1,0 +1,55 @@
+Known gaps
+======================================
+
+No naughty string validation (e.g. protection against huge strings when creating an account)
+
+
+
+
+Found problems with AI tests
+======================================
+
+// 1.
+// Non-sensical test - a stock position, if it exists, must be above zero.
+// If you sell all shares - the entire position is removed.
+
+    @Test
+    void aZeroCostBasisIsAllowed() {
+        assertDoesNotThrow(() -> new Position(AAPL, 1, Money.usd("0")));
+    }
+
+// 2.
+// Account / Deposit / Balance all in one class, not split.
+
+
+// 3. Poorly named test in e.g. CsvStaticDataProviderTest
+
+was: sameCurrencyIsOne
+renamed to: convertingACurrencyToItselfHasARateOfOne
+
+was: anUnlistedPairFails
+renamed to: askingForARateNotInTheFileFails
+
+// tip: tell AI to rename tests in plain, business-friendly language
+
+Example output:
+
+I'd rename 4 of the 7 and keep the other 3. I haven't changed anything.
+
+Rename
+- anUnknownAccountHasNoAccountAndNoPortfolio → lookingUpAnUnknownAccountFindsNothing. The current name is clumsy.
+- saveReplacesBalancesAndPositions → aSavedPortfolioIsReadBackExactly. This describes what the test asserts.
+
+
+// 4. Redundant tests with random redundant value within a partition (5000)
+
+    @Test
+    void canAffordABuyWhenTheUsdBalanceIsLargeEnough() {
+        assertTrue(validator.canAfford(buyTenAtLimit235(), withCash(CashBalance.usd("5000"))));
+    }
+
+    @Test
+    void canAffordABuyCostingExactlyTheUsdBalance() {
+        assertTrue(validator.canAfford(buyTenAtLimit235(), withCash(CashBalance.usd("2350.00"))));
+    }
+

@@ -1,8 +1,0 @@
-
-// Non-sensical test - a stock position, if it exists, must be above zero.
-// If you sell all shares - the entire position is removed.
-
-    @Test
-    void aZeroCostBasisIsAllowed() {
-        assertDoesNotThrow(() -> new Position(AAPL, 1, Money.usd("0")));
-    }

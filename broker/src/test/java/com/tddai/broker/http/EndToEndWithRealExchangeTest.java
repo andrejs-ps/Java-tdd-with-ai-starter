@@ -19,7 +19,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 
 /**
- * Happy paths against the REAL exchange Maven Module, with its random slowness switched off (the
+ * E2E tests against the REAL exchange Maven Module, with its random slowness switched off (the
  * equivalent of exchange.faults.enabled=false) so the result is deterministic.
  */
 class EndToEndWithRealExchangeTest {

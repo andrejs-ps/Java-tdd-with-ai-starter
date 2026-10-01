@@ -52,13 +52,13 @@ class JdbcPortfolioStoreTest {
     }
 
     @Test
-    void anUnknownAccountHasNoAccountAndNoPortfolio() {
+    void lookingUpAnUnknownAccountFindsNothing() {
         assertEquals(Optional.empty(), store.findAccount(UUID.randomUUID()));
         assertEquals(Optional.empty(), store.findPortfolio(UUID.randomUUID()));
     }
 
     @Test
-    void saveReplacesBalancesAndPositions() {
+    void aSavedPortfolioIsReadBackExactly() {
         store.createAccount(account, initial());
         Portfolio updated = new Portfolio(account.id(),
                 List.of(CashBalance.eur("107.4074"), CashBalance.usd("2685.80")),
@@ -71,7 +71,7 @@ class JdbcPortfolioStoreTest {
     }
 
     @Test
-    void saveCanRemoveAPositionAndLowerABalance() {
+    void savingAfterASaleRemovesThePositionAndUpdatesTheCash() {
         store.createAccount(account, initial());
         store.save(new Portfolio(account.id(), List.of(CashBalance.usd("100")),
                 List.of(new Position(Symbol.of("AAPL"), 10, Money.usd("1000")))));
@@ -95,7 +95,7 @@ class JdbcPortfolioStoreTest {
     }
 
     @Test
-    void aFailedCreateLeavesNothingBehind() {
+    void creatingTheSameAccountTwiceFailsAndKeepsTheOriginal() {
         store.createAccount(account, initial());
 
         assertThrows(RuntimeException.class, () -> store.createAccount(account, initial()));

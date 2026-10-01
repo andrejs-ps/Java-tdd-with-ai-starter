@@ -24,15 +24,15 @@ class CsvStaticDataProviderTest {
     }
 
     @Test
-    void sameCurrencyIsOne() {
+    void convertingACurrencyToItselfHasARateOfOne() {
         assertEquals(0, BigDecimal.ONE.compareTo(provider.getFxRate(Currency.USD, Currency.USD)));
     }
 
     @Test
-    void anUnlistedPairFails() {
-        var onlyOneWay = new CsvStaticDataProvider(new StringReader("from,to,rate\nEUR,USD,1.08\n"));
+    void askingForARateNotInTheFileFails() {
+        var provider = new CsvStaticDataProvider(new StringReader("from,to,rate\nEUR,USD,1.08\n"));
 
-        assertThrows(IllegalArgumentException.class, () -> onlyOneWay.getFxRate(Currency.USD, Currency.EUR));
+        assertThrows(IllegalArgumentException.class, () -> provider.getFxRate(Currency.USD, Currency.EUR));
     }
 
     @Test

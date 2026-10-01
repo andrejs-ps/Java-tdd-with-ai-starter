@@ -28,10 +28,10 @@ public class CsvStaticDataProvider implements StaticDataProvider {
 
     private final Map<Pair, BigDecimal> rates = new HashMap<>();
 
-    public CsvStaticDataProvider(Reader csv) {
+    public CsvStaticDataProvider(Reader reader) {
         CsvMapper mapper = CsvMapper.builder().build();
         CsvSchema schema = CsvSchema.emptySchema().withHeader();
-        try (var rows = mapper.readerFor(FxRateRow.class).with(schema).<FxRateRow>readValues(csv)) {
+        try (var rows = mapper.readerFor(FxRateRow.class).with(schema).<FxRateRow>readValues(reader)) {
             while (rows.hasNext()) {
                 FxRateRow row = rows.next();
                 rates.put(new Pair(row.from(), row.to()), row.rate());

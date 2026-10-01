@@ -13,6 +13,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 
 import static io.restassured.RestAssured.given;
@@ -29,9 +30,18 @@ class EndToEndWithRealExchangeTest {
 
     @BeforeEach
     void start() {
-        exchange = ExchangeApp.start(new ExchangeConfig(0, false, 0.0, 0));
-        broker = BrokerApp.start(new BrokerConfig(0, "http://localhost:" + exchange.port(),
-                Duration.ofSeconds(2), Database.uniqueInMemoryUrl()));
+        int randomPort = 0;
+        boolean faultsEnabled = false;
+        double slowChance = 0.0;
+        long slowDelayMs = 0;
+        exchange = ExchangeApp.start(new ExchangeConfig(randomPort, faultsEnabled, slowChance, slowDelayMs));
+
+        String exchangeUrl = "http://localhost:" + exchange.port();
+        Duration exchangeTimeout = Duration.ofSeconds(2);
+        String dbUrl = Database.uniqueInMemoryUrl();
+        BigDecimal flatFeeUsd = new BigDecimal("1.00");
+        broker = BrokerApp.start(new BrokerConfig(randomPort, exchangeUrl, exchangeTimeout, dbUrl, flatFeeUsd));
+
         RestAssured.baseURI = "http://localhost";
         RestAssured.port = broker.port();
     }
@@ -71,13 +81,13 @@ class EndToEndWithRealExchangeTest {
         post("/accounts/" + id + "/orders", """
                 {"symbol": "AAPL", "side": "BUY", "quantity": 10, "limitPrice": 235.00}
                 """)
-        .statusCode(200)
+                .statusCode(200)
                 .body("fillPrice", equalTo(231.42f));
 
         post("/accounts/" + id + "/orders", """
                 {"symbol": "AAPL", "side": "SELL", "quantity": 4, "limitPrice": 200.00}
                 """)
-        .statusCode(200)
+                .statusCode(200)
                 .body("fillPrice", equalTo(231.42f));
 
         given()
@@ -94,7 +104,7 @@ class EndToEndWithRealExchangeTest {
                 .when()
                 .get("/accounts/" + id)
                 .then()
-                .body("balances[0].amount", equalTo(3611.48f));
+                .body("balances[0].amount", equalTo(3609.48f));
     }
 
     @Test
@@ -104,7 +114,7 @@ class EndToEndWithRealExchangeTest {
         post("/accounts/" + id + "/orders", """
                 {"symbol": "AAPL", "side": "BUY", "quantity": 10, "limitPrice": 200.00}
                 """)
-        .statusCode(200)
+                .statusCode(200)
                 .body("status", equalTo("KILLED"))
                 .body("reason", equalTo("LIMIT_NOT_MET"));
 

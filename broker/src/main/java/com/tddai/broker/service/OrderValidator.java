@@ -11,10 +11,7 @@ import com.tddai.broker.error.InvalidRequestException;
 import java.util.Optional;
 
 /**
- * Order validation rules that need no exchange call and no cash check (affordability is
- * BuyingPowerValidator's job).
- * Malformed orders throw InvalidRequestException (HTTP 400); a SELL of more than the position holds
- * is returned as a reason (HTTP 422).
+ * Order validation rules that need no exchange call and no affordability check
  */
 public class OrderValidator {
 

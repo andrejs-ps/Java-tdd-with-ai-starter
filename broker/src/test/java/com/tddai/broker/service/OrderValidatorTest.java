@@ -11,6 +11,10 @@ import com.tddai.broker.domain.Symbol;
 import com.tddai.broker.domain.order.TimeInForce;
 import com.tddai.broker.error.InvalidRequestException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.List;
 import java.util.Optional;
@@ -40,65 +44,72 @@ class OrderValidatorTest {
     @Test
     void acceptsAWellFormedBuyWhateverTheCash() {
         // whether the cash covers it is BuyingPowerValidator's question, not this one's
-        assertEquals(Optional.empty(), validator.validate(order(Side.BUY, 10, "235.00"), portfolioHolding(0)));
+        var order = order(Side.BUY, 10, "235.00");
+        var portfolio = portfolioHolding(0);
+
+        Optional<RejectionReason> expected = Optional.empty();
+        var actual = validator.validate(order, portfolio);
+        assertEquals(expected, actual);
     }
 
     @Test
-    void aSellNeedsNoCash() {
-        assertEquals(Optional.empty(), validator.validate(order(Side.SELL, 4, "235.00"), portfolioHolding(10)));
-    }
+    void acceptsASellOfLessThanHeldWhateverTheCash() {
+        var order = order(Side.SELL, 4, "235.00");
+        var portfolio = portfolioHolding(10);
 
-    @Test
-    void acceptsASellOfLessThanHeld() {
-        assertEquals(Optional.empty(), validator.validate(order(Side.SELL, 4, "235.00"), portfolioHolding(10)));
+        Optional<RejectionReason> expected = Optional.empty();
+        var actual = validator.validate(order, portfolio);
+        assertEquals(expected, actual);
     }
 
     @Test
     void acceptsASellOfExactlyTheHeldQuantity() {
-        assertEquals(Optional.empty(), validator.validate(order(Side.SELL, 10, "235.00"), portfolioHolding(10)));
+        var order = order(Side.SELL, 10, "235.00");
+        var portfolio = portfolioHolding(10);
+
+        Optional<RejectionReason> expected = Optional.empty();
+        var actual = validator.validate(order, portfolio);
+        assertEquals(expected, actual);
     }
 
     @Test
     void rejectsASellOfMoreThanHeld() {
-        assertEquals(Optional.of(RejectionReason.INSUFFICIENT_POSITION),
-                validator.validate(order(Side.SELL, 11, "235.00"), portfolioHolding(10)));
+        var order = order(Side.SELL, 11, "235.00");
+        var portfolio = portfolioHolding(10);
+
+        var expected = Optional.of(RejectionReason.INSUFFICIENT_POSITION);
+        var actual = validator.validate(order, portfolio);
+        assertEquals(expected, actual);
     }
 
     @Test
     void rejectsASellOfASymbolNotHeldAtAll() {
-        assertEquals(Optional.of(RejectionReason.INSUFFICIENT_POSITION),
-                validator.validate(order(Side.SELL, 1, "235.00"), portfolioHolding(0)));
+        var order = order(Side.SELL, 1, "235.00");
+        var portfolio = portfolioHolding(0);
+
+        var expected = Optional.of(RejectionReason.INSUFFICIENT_POSITION);
+        var actual = validator.validate(order, portfolio);
+        assertEquals(expected, actual);
     }
 
-    @Test
-    void rejectsZeroQuantityAsInvalid() {
-        assertThrows(InvalidRequestException.class,
-                () -> validator.validate(order(Side.BUY, 0, "235.00"), portfolioHolding(0)));
+    @ParameterizedTest(name = "quantity={0} limitPrice={1}")
+    @CsvSource({
+            "0, 235.00",
+            "-5, 235.00",
+            "1, 0",
+            "1, -1.00"
+    })
+    void rejectsANonPositiveQuantityOrLimitPriceAsInvalid(long quantity, String limitPrice) {
+        var order = order(Side.BUY, quantity, limitPrice);
+        var portfolio = portfolioHolding(0);
+
+        assertThrows(InvalidRequestException.class, () -> validator.validate(order, portfolio));
     }
 
-    @Test
-    void rejectsNegativeQuantityAsInvalid() {
-        assertThrows(InvalidRequestException.class,
-                () -> validator.validate(order(Side.BUY, -5, "235.00"), portfolioHolding(0)));
-    }
-
-    @Test
-    void rejectsZeroLimitPriceAsInvalid() {
-        assertThrows(InvalidRequestException.class,
-                () -> validator.validate(order(Side.BUY, 1, "0"), portfolioHolding(0)));
-    }
-
-    @Test
-    void rejectsNegativeLimitPriceAsInvalid() {
-        assertThrows(InvalidRequestException.class,
-                () -> validator.validate(order(Side.BUY, 1, "-1.00"), portfolioHolding(0)));
-    }
-
-    @Test
-    void symbolMustBeAValidTicker() {
-        assertThrows(InvalidRequestException.class, () -> Symbol.of("aapl"));
-        assertThrows(InvalidRequestException.class, () -> Symbol.of(""));
-        assertThrows(InvalidRequestException.class, () -> Symbol.of("TOOLONG"));
-        assertThrows(InvalidRequestException.class, () -> Symbol.of(null));
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"aapl", "TOOLONG"})
+    void symbolMustBeAValidTicker(String symbol) {
+        assertThrows(InvalidRequestException.class, () -> Symbol.of(symbol));
     }
 }

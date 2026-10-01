@@ -42,8 +42,7 @@ class OrderServiceTest {
     private static final Instant EXCHANGE_TIME = Instant.parse("2026-01-02T15:04:05Z");
 
     /**
-     * Hand-written fake: answers every order with whatever the test set and remembers the orders it
-     * got.
+     * Hand-written fake: answers every order with whatever the test set and remembers the orders it got.
      * The exchange alone decides fill or kill; the service takes its answer as is.
      */
     private static class FakeExchange implements ExchangeClient {
@@ -81,8 +80,8 @@ class OrderServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new OrderService(store, new OrderValidator(), new BuyingPowerValidator(), exchange,
-                new PortfolioUpdater());
+        service = new OrderService(store, new OrderValidator(), new BuyingPowerValidator(Money.usd("1.00")), exchange,
+                new PortfolioUpdater(Money.usd("1.00")));
         accountId = UUID.randomUUID();
         store.createAccount(new Account(accountId, new Investor(UUID.randomUUID(), "Ada")),
                 new Portfolio(accountId, List.of(CashBalance.usd("5000")), List.of()));
@@ -125,7 +124,7 @@ class OrderServiceTest {
         service.placeOrder(order(Side.BUY, 10, "235.00"));
 
         Portfolio saved = store.findPortfolio(accountId).orElseThrow();
-        assertEquals(CashBalance.usd("2685.80"), saved.cashBalance(Currency.USD).orElseThrow());
+        assertEquals(CashBalance.usd("2684.80"), saved.cashBalance(Currency.USD).orElseThrow());
         assertEquals(new Position(AAPL, 10, Money.usd("2314.20")), saved.position(AAPL).orElseThrow());
         assertEquals(1, store.saveCount());
     }
@@ -139,7 +138,7 @@ class OrderServiceTest {
 
         assertEquals(OrderStatus.FILLED, result.status());
         Portfolio saved = store.findPortfolio(accountId).orElseThrow();
-        assertEquals(CashBalance.usd("5600.00"), saved.cashBalance(Currency.USD).orElseThrow());
+        assertEquals(CashBalance.usd("5599.00"), saved.cashBalance(Currency.USD).orElseThrow());
         assertEquals(6, saved.position(AAPL).orElseThrow().quantity());
     }
 
@@ -185,6 +184,29 @@ class OrderServiceTest {
         assertEquals(RejectionReason.INSUFFICIENT_FUNDS, result.rejectionReason());
         assertEquals(0, exchange.received.size());
         assertEquals(0, store.saveCount());
+    }
+
+    @Test
+    void aBuyCostingTheWholeUsdBalanceIsRejectedBecauseTheFeeIsNotCovered() {
+        // 5000 USD in the account: 20 x 250 = 5000 leaves nothing for the 1.00 fee
+        Order result = service.placeOrder(order(Side.BUY, 20, "250.00"));
+
+        assertEquals(OrderStatus.REJECTED, result.status());
+        assertEquals(RejectionReason.INSUFFICIENT_FUNDS, result.rejectionReason());
+        assertEquals(0, exchange.received.size());
+    }
+
+    @Test
+    void aSellWithNoUsdCashGoesThroughAndThePortfolioPaysTheFeeFromTheProceeds() {
+        store.seed(new Portfolio(accountId, List.of(CashBalance.usd("0")),
+                List.of(new Position(AAPL, 10, Money.usd("1000")))));
+        exchange.fillsAt("150.00");
+
+        Order result = service.placeOrder(order(Side.SELL, 4, "145.00"));
+
+        assertEquals(OrderStatus.FILLED, result.status());
+        Portfolio saved = store.findPortfolio(accountId).orElseThrow();
+        assertEquals(CashBalance.usd("599.00"), saved.cashBalance(Currency.USD).orElseThrow());
     }
 
     @Test

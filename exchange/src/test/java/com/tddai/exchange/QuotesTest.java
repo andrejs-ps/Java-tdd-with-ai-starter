@@ -46,8 +46,8 @@ class QuotesTest {
     private static ExchangeConfig noFaults() {
         boolean faultsEnabled = false;
         double slowChance = 0.0;
-        long slowDelaMs = 0;
-        return new ExchangeConfig(PORT, faultsEnabled, slowChance, slowDelaMs);
+        long slowDelayMs = 0;
+        return new ExchangeConfig(PORT, faultsEnabled, slowChance, slowDelayMs);
     }
 
     @Test

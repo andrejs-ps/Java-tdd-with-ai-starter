@@ -53,3 +53,13 @@ Rename
         assertTrue(validator.canAfford(buyTenAtLimit235(), withCash(CashBalance.usd("2350.00"))));
     }
 
+// 5. Full package names for now reason:
+
+com.tddai.broker.domain.Currency.USD
+
+
+// 6. This prompt yields real results: scan through the tests and check for improvements. you don't have to nitpick or be overzealous. only truly worthy improvements. be selective. print suggestions. if nothing - just say so.
+
+- Duplicates
+- gaps
+- poor formatting, broken rules

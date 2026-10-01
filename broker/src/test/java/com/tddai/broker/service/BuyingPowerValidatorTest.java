@@ -8,6 +8,8 @@ import com.tddai.broker.domain.order.TimeInForce;
 import com.tddai.broker.domain.portfolio.CashBalance;
 import com.tddai.broker.domain.portfolio.Portfolio;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.List;
 import java.util.UUID;
@@ -17,45 +19,51 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BuyingPowerValidatorTest {
 
-    private static final UUID ACCOUNT = UUID.randomUUID();
+    private static final UUID ACCOUNT_ID = UUID.randomUUID();
 
-    private final BuyingPowerValidator validator = new BuyingPowerValidator();
+    private final BuyingPowerValidator validator = new BuyingPowerValidator(Money.usd("1.00"));
 
     /**
-     * 10 shares at a 235.00 limit: the order can cost at most 2350.00.
+     * 10 shares at a 235.00 limit: the order can cost at most 2350.00, plus the flat 1.00 fee.
      */
     private static OrderRequest buyTenAtLimit235() {
-        return new OrderRequest(ACCOUNT, Symbol.of("AAPL"), Side.BUY, 10, Money.usd("235.00"), TimeInForce.FOK);
+        return new OrderRequest(
+                ACCOUNT_ID,
+                Symbol.of("AAPL"),
+                Side.BUY, 10,
+                Money.usd("235.00"),
+                TimeInForce.FOK
+        );
     }
 
-    private static Portfolio withCash(CashBalance... balances) {
-        return new Portfolio(ACCOUNT, List.of(balances), List.of());
+    private static Portfolio withBalances(CashBalance... balances) {
+        return new Portfolio(ACCOUNT_ID, List.of(balances), List.of());
     }
 
-    @Test
-    void canAffordABuyWhenTheUsdBalanceIsLargeEnough() {
-        assertTrue(validator.canAfford(buyTenAtLimit235(), withCash(CashBalance.usd("5000"))));
+    @ParameterizedTest
+    @ValueSource(strings = {"5000", "2351.00"})
+    void canAffordABuyWhenTheUsdBalanceCoversCostPlusFee(String usdBalance) {
+        var order = buyTenAtLimit235();
+        var portfolio = withBalances(CashBalance.usd(usdBalance));
+
+        assertTrue(validator.canAfford(order, portfolio));
     }
 
-    @Test
-    void canAffordABuyCostingExactlyTheUsdBalance() {
-        assertTrue(validator.canAfford(buyTenAtLimit235(), withCash(CashBalance.usd("2350.00"))));
-    }
+    @ParameterizedTest
+    @ValueSource(strings = {"2350.99", "2350.00", "0"})
+    void cannotAffordABuyWhenTheUsdBalanceIsShortOfCostPlusFee(String usdBalance) {
+        var order = buyTenAtLimit235();
+        var portfolio = withBalances(CashBalance.usd(usdBalance));
 
-    @Test
-    void cannotAffordABuyCostingEvenACentMoreThanTheUsdBalance() {
-        assertFalse(validator.canAfford(buyTenAtLimit235(), withCash(CashBalance.usd("2349.99"))));
-    }
-
-    @Test
-    void cannotAffordAnythingWithNoUsdBalanceAtAll() {
-        assertFalse(validator.canAfford(buyTenAtLimit235(), withCash()));
+        assertFalse(validator.canAfford(order, portfolio));
     }
 
     @Test
     void anEurBalanceNeverHelpsPayForABuy() {
         // trading goes through USD only: plenty of EUR does not make the order affordable
-        assertFalse(validator.canAfford(buyTenAtLimit235(),
-                withCash(CashBalance.usd("100"), CashBalance.eur("10000"))));
+        var order = buyTenAtLimit235();
+        var portfolio = withBalances(CashBalance.usd("100"), CashBalance.eur("10000"));
+
+        assertFalse(validator.canAfford(order, portfolio));
     }
 }

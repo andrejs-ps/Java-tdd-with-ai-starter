@@ -1,6 +1,7 @@
 package com.tddai.broker;
 
 import com.tddai.broker.config.BrokerConfig;
+import com.tddai.broker.domain.Money;
 import com.tddai.broker.http.AccountController;
 import com.tddai.broker.http.ApiErrors;
 import com.tddai.broker.http.OrderController;
@@ -52,9 +53,11 @@ public final class BrokerApp {
                 URI.create(config.exchangeUrl()),
                 config.exchangeTimeout());
 
+        Money flatFee = Money.usd(config.flatFeeUsd());
         var accountController = new AccountController(new AccountService(store));
         var orderController = new OrderController(new OrderService(
-                store, new OrderValidator(), new BuyingPowerValidator(), exchange, new PortfolioUpdater()));
+                store, new OrderValidator(), new BuyingPowerValidator(flatFee), exchange,
+                new PortfolioUpdater(flatFee)));
         var positionController = new PositionController(new PositionService(store, exchange));
 
         return Javalin.create(cfg -> {

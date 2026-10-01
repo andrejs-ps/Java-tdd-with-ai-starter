@@ -7,7 +7,6 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -21,8 +20,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
- * Tests for: POST /orders endpoint  fill or kill at the same hard-coded prices that are served as
- * quotes
+ * Tests for: POST /orders endpoint, fill or kill at the same prices that are served as quotes
  */
 class OrdersTest {
 
@@ -156,7 +154,7 @@ class OrdersTest {
         sendRaw("""
                 {"symbol": "AAPL", "side": "BUY", "limitPrice": 100}
                 """)
-        .statusCode(400);
+                .statusCode(400);
     }
 
 }

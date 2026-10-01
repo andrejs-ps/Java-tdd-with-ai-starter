@@ -10,6 +10,7 @@ import io.restassured.response.ValidatableResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 
 import static io.restassured.RestAssured.given;
@@ -35,7 +36,7 @@ public abstract class BrokerIntegrationTest {
     void startBrokerAndStubExchange() {
         exchange = new StubExchange();
         broker = BrokerApp.start(new BrokerConfig(0, exchange.url(), exchangeTimeout(),
-                Database.uniqueInMemoryUrl()));
+                Database.uniqueInMemoryUrl(), new BigDecimal("1.00")));
         RestAssured.baseURI = "http://localhost";
         RestAssured.port = broker.port();
     }

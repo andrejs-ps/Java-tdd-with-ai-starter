@@ -1,5 +1,6 @@
 package com.tddai.broker.service;
 
+import com.tddai.broker.domain.Currency;
 import com.tddai.broker.domain.portfolio.CashBalance;
 import com.tddai.broker.domain.Money;
 import com.tddai.broker.domain.order.Order;
@@ -25,7 +26,8 @@ class PortfolioUpdaterTest {
     private static final UUID ACCOUNT = UUID.randomUUID();
     private static final Symbol AAPL = Symbol.of("AAPL");
 
-    private final PortfolioUpdater updater = new PortfolioUpdater();
+    private static final Money fee = Money.usd("1.00");
+    private final PortfolioUpdater updater = new PortfolioUpdater(fee);
 
     private static Order filled(Side side, long quantity, String fillPrice) {
         var request = new OrderRequest(ACCOUNT, AAPL, side, quantity, Money.usd("1000"), TimeInForce.FOK);
@@ -44,8 +46,12 @@ class PortfolioUpdaterTest {
 
         var after = updater.applyFill(before, filled(Side.BUY, 10, "231.42"));
 
-        assertEquals(CashBalance.usd("2685.80"), after.cashBalance(com.tddai.broker.domain.Currency.USD).orElseThrow());
-        assertEquals(new Position(AAPL, 10, Money.usd("2314.20")), after.position(AAPL).orElseThrow());
+        var expectedUsd = CashBalance.usd("2684.80");
+        var actualUsd = after.cashBalance(Currency.USD).orElseThrow();
+        var expectedPosition = new Position(AAPL, 10, Money.usd("2314.20"));
+        var actualPosition = after.position(AAPL).orElseThrow();
+        assertEquals(expectedUsd, actualUsd);
+        assertEquals(expectedPosition, actualPosition);
     }
 
     @Test
@@ -54,8 +60,12 @@ class PortfolioUpdaterTest {
 
         var after = updater.applyFill(before, filled(Side.BUY, 5, "230.00"));
 
-        assertEquals(new Position(AAPL, 15, Money.usd("3150.00")), after.position(AAPL).orElseThrow());
-        assertEquals(CashBalance.usd("3850.00"), after.cashBalance(com.tddai.broker.domain.Currency.USD).orElseThrow());
+        var expectedPosition = new Position(AAPL, 15, Money.usd("3150.00"));
+        var actualPosition = after.position(AAPL).orElseThrow();
+        var expectedUsd = CashBalance.usd("3849.00");
+        var actualUsd = after.cashBalance(Currency.USD).orElseThrow();
+        assertEquals(expectedPosition, actualPosition);
+        assertEquals(expectedUsd, actualUsd);
     }
 
     @Test
@@ -64,8 +74,33 @@ class PortfolioUpdaterTest {
 
         var after = updater.applyFill(before, filled(Side.BUY, 10, "60.00"));
 
-        assertEquals(CashBalance.usd("400.00"), after.cashBalance(com.tddai.broker.domain.Currency.USD).orElseThrow());
-        assertEquals(CashBalance.eur("200"), after.cashBalance(com.tddai.broker.domain.Currency.EUR).orElseThrow());
+        var expectedUsd = CashBalance.usd("399.00");
+        var actualUsd = after.cashBalance(Currency.USD).orElseThrow();
+        var expectedEur = CashBalance.eur("200");
+        var actualEur = after.cashBalance(Currency.EUR).orElseThrow();
+        assertEquals(expectedUsd, actualUsd);
+        assertEquals(expectedEur, actualEur);
+    }
+
+    @Test
+    void buyCanUseUpTheWholeUsdBalanceIncludingTheFee() {
+        var before = portfolio(List.of(CashBalance.usd("601.00")), List.of());
+
+        var after = updater.applyFill(before, filled(Side.BUY, 10, "60.00"));
+
+        var expectedUsd = CashBalance.usd("0.00");
+        var actualUsd = after.cashBalance(Currency.USD).orElseThrow();
+        assertEquals(expectedUsd, actualUsd);
+    }
+
+    @Test
+    void buyCannotProduceANegativeBalanceWhenOnlyTheFeeIsMissing() {
+        // not reachable once the order is validated upstream; the CashBalance type is the last line of defence
+        var before = portfolio(List.of(CashBalance.usd("600.00")), List.of());
+
+        assertThrows(IllegalArgumentException.class,
+                () -> updater.applyFill(before, filled(Side.BUY, 10, "60.00"))
+        );
     }
 
     @Test
@@ -73,7 +108,9 @@ class PortfolioUpdaterTest {
         // not reachable once the order is validated upstream; the CashBalance type is the last line of defence
         var before = portfolio(List.of(CashBalance.usd("100"), CashBalance.eur("10000")), List.of());
 
-        assertThrows(IllegalArgumentException.class, () -> updater.applyFill(before, filled(Side.BUY, 10, "60.00")));
+        assertThrows(IllegalArgumentException.class,
+                () -> updater.applyFill(before, filled(Side.BUY, 10, "60.00"))
+        );
     }
 
     // ---- SELL
@@ -84,8 +121,12 @@ class PortfolioUpdaterTest {
 
         var after = updater.applyFill(before, filled(Side.SELL, 4, "150.00"));
 
-        assertEquals(CashBalance.usd("600.00"), after.cashBalance(com.tddai.broker.domain.Currency.USD).orElseThrow());
-        assertEquals(new Position(AAPL, 6, Money.usd("600.00")), after.position(AAPL).orElseThrow());
+        var expectedUsd = CashBalance.usd("599.00");
+        var actualUsd = after.cashBalance(Currency.USD).orElseThrow();
+        var expectedPosition = new Position(AAPL, 6, Money.usd("600.00"));
+        var actualPosition = after.position(AAPL).orElseThrow();
+        assertEquals(expectedUsd, actualUsd);
+        assertEquals(expectedPosition, actualPosition);
     }
 
     @Test
@@ -95,7 +136,9 @@ class PortfolioUpdaterTest {
 
         var after = updater.applyFill(before, filled(Side.SELL, 1, "10.00"));
 
-        assertEquals(Money.usd("0.12"), after.position(AAPL).orElseThrow().costBasis());
+        var expectedCostBasis = Money.usd("0.12");
+        var actualCostBasis = after.position(AAPL).orElseThrow().costBasis();
+        assertEquals(expectedCostBasis, actualCostBasis);
     }
 
     @Test
@@ -104,8 +147,33 @@ class PortfolioUpdaterTest {
 
         var after = updater.applyFill(before, filled(Side.SELL, 10, "150.00"));
 
-        assertTrue(after.position(AAPL).isEmpty());
-        assertEquals(CashBalance.usd("1500.00"), after.cashBalance(com.tddai.broker.domain.Currency.USD).orElseThrow());
+        var positionIsGone = after.position(AAPL).isEmpty();
+        var expectedUsd = CashBalance.usd("1499.00");
+        var actualUsd = after.cashBalance(Currency.USD).orElseThrow();
+        assertTrue(positionIsGone);
+        assertEquals(expectedUsd, actualUsd);
+    }
+
+    @Test
+    void sellWithProceedsExactlyTheFeeChargesItAndCreditsNothing() {
+        var before = portfolio(List.of(CashBalance.usd("0")), List.of(new Position(AAPL, 1, Money.usd("100"))));
+
+        var after = updater.applyFill(before, filled(Side.SELL, 1, "1.00"));
+
+        var expectedUsd = CashBalance.usd("0.00");
+        var actualUsd = after.cashBalance(Currency.USD).orElseThrow();
+        assertEquals(expectedUsd, actualUsd);
+    }
+
+    @Test
+    void sellWithProceedsEvenACentBelowTheFeeIsFreeOfCharge() {
+        var before = portfolio(List.of(CashBalance.usd("0")), List.of(new Position(AAPL, 1, Money.usd("100"))));
+
+        var after = updater.applyFill(before, filled(Side.SELL, 1, "0.99"));
+
+        var expectedUsd = CashBalance.usd("0.99");
+        var actualUsd = after.cashBalance(Currency.USD).orElseThrow();
+        assertEquals(expectedUsd, actualUsd);
     }
 
     @Test
@@ -115,7 +183,9 @@ class PortfolioUpdaterTest {
 
         var after = updater.applyFill(before, filled(Side.SELL, 10, "150.00"));
 
-        assertEquals(CashBalance.eur("50"), after.cashBalance(com.tddai.broker.domain.Currency.EUR).orElseThrow());
+        var expectedEur = CashBalance.eur("50");
+        var actualEur = after.cashBalance(Currency.EUR).orElseThrow();
+        assertEquals(expectedEur, actualEur);
     }
 
     @Test

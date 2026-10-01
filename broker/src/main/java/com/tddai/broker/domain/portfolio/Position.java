@@ -19,8 +19,8 @@ public record Position(Symbol symbol, long quantity, Money costBasis) {
         if (quantity <= 0) {
             throw new IllegalArgumentException("A position needs at least one share: " + quantity);
         }
-        if (costBasis.amount().signum() < 0) {
-            throw new IllegalArgumentException("A position's cost basis cannot be negative: " + costBasis);
+        if (costBasis.amount().signum() <= 0) {
+            throw new IllegalArgumentException("A position's cost basis must be above zero: " + costBasis);
         }
     }
 }

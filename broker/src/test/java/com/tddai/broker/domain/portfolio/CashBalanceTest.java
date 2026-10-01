@@ -1,6 +1,4 @@
 package com.tddai.broker.domain.portfolio;
-
-import com.tddai.broker.domain.Currency;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -24,7 +22,7 @@ class CashBalanceTest {
     @Test
     void aNegativeBalanceCannotBeBuilt() {
         assertThrows(IllegalArgumentException.class, () -> CashBalance.usd("-0.01"));
-        assertThrows(IllegalArgumentException.class, () -> new CashBalance(new BigDecimal("-1"), Currency.EUR));
+        assertThrows(IllegalArgumentException.class, () -> CashBalance.eur("-0.01"));
     }
 
     @Test

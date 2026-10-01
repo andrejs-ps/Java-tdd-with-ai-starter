@@ -9,7 +9,6 @@ import com.tddai.broker.infra.Database;
 import com.tddai.broker.infra.ExchangeClient;
 import com.tddai.broker.infra.HttpExchangeClient;
 import com.tddai.broker.infra.JdbcPortfolioStore;
-import com.tddai.broker.infra.JdbiPortfolioStore;
 import com.tddai.broker.infra.PortfolioStore;
 import com.tddai.broker.service.AccountService;
 import com.tddai.broker.service.BuyingPowerValidator;
@@ -47,10 +46,7 @@ public final class BrokerApp {
      */
     public static Javalin create(BrokerConfig config) {
         DataSource dataSource = Database.create(config.dbUrl());
-        PortfolioStore store = switch (config.storeImpl()) {
-            case JDBI -> new JdbiPortfolioStore(dataSource);
-            case JDBC -> new JdbcPortfolioStore(dataSource);
-        };
+        PortfolioStore store = new JdbcPortfolioStore(dataSource);
         ExchangeClient exchange = new HttpExchangeClient(
                 HttpClient.newBuilder().connectTimeout(config.exchangeTimeout()).build(),
                 URI.create(config.exchangeUrl()),

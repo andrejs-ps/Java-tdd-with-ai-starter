@@ -2,7 +2,6 @@ package com.tddai.broker.support;
 
 import com.tddai.broker.BrokerApp;
 import com.tddai.broker.config.BrokerConfig;
-import com.tddai.broker.config.StoreImpl;
 import com.tddai.broker.infra.Database;
 import io.javalin.Javalin;
 import io.restassured.RestAssured;
@@ -25,10 +24,6 @@ public abstract class BrokerIntegrationTest {
     protected StubExchange exchange;
     private Javalin broker;
 
-    protected StoreImpl storeImpl() {
-        return StoreImpl.JDBI;
-    }
-
     /**
      * Short on purpose, so a stub that delays longer than this produces a timeout.
      */
@@ -39,7 +34,7 @@ public abstract class BrokerIntegrationTest {
     @BeforeEach
     void startBrokerAndStubExchange() {
         exchange = new StubExchange();
-        broker = BrokerApp.start(new BrokerConfig(0, exchange.url(), exchangeTimeout(), storeImpl(),
+        broker = BrokerApp.start(new BrokerConfig(0, exchange.url(), exchangeTimeout(),
                 Database.uniqueInMemoryUrl()));
         RestAssured.baseURI = "http://localhost";
         RestAssured.port = broker.port();

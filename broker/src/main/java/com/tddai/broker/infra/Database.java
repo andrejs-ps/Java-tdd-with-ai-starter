@@ -14,7 +14,7 @@ import java.util.UUID;
 
 /**
  * Creates the embedded H2 DataSource and applies schema.sql.
- * Shared by both PortfolioStore implementations.
+ * Used by the PortfolioStore.
  */
 public final class Database {
 

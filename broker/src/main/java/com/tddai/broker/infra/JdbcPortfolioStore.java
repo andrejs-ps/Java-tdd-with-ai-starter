@@ -21,7 +21,6 @@ import java.util.UUID;
 
 /**
  * PortfolioStore on plain JDBC.
- * Same behavior as JdbiPortfolioStore, with the boilerplate visible.
  */
 public class JdbcPortfolioStore implements PortfolioStore {
 

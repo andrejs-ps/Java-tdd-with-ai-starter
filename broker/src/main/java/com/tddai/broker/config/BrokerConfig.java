@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.time.Duration;
-import java.util.Locale;
 import java.util.Properties;
 
 /**
@@ -13,7 +12,7 @@ import java.util.Properties;
  * system property.
  * Tests construct the record directly.
  */
-public record BrokerConfig(int port, String exchangeUrl, Duration exchangeTimeout, StoreImpl storeImpl, String dbUrl) {
+public record BrokerConfig(int port, String exchangeUrl, Duration exchangeTimeout, String dbUrl) {
 
     public static BrokerConfig load() {
         Properties props = new Properties();
@@ -28,7 +27,6 @@ public record BrokerConfig(int port, String exchangeUrl, Duration exchangeTimeou
                 Integer.parseInt(get(props, "broker.port", "7080")),
                 get(props, "exchange.url", "http://localhost:7070"),
                 Duration.ofMillis(Long.parseLong(get(props, "exchange.timeout-ms", "2000"))),
-                StoreImpl.valueOf(get(props, "store.impl", "jdbi").toUpperCase(Locale.ROOT)),
                 get(props, "db.url", "jdbc:h2:file:./data/broker"));
     }
 

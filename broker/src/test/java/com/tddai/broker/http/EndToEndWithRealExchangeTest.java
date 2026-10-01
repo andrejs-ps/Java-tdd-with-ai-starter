@@ -2,7 +2,6 @@ package com.tddai.broker.http;
 
 import com.tddai.broker.BrokerApp;
 import com.tddai.broker.config.BrokerConfig;
-import com.tddai.broker.config.StoreImpl;
 import com.tddai.broker.infra.Database;
 import com.tddai.exchange.ExchangeApp;
 import com.tddai.exchange.config.ExchangeConfig;
@@ -32,7 +31,7 @@ class EndToEndWithRealExchangeTest {
     void start() {
         exchange = ExchangeApp.start(new ExchangeConfig(0, false, 0.0, 0));
         broker = BrokerApp.start(new BrokerConfig(0, "http://localhost:" + exchange.port(),
-                Duration.ofSeconds(2), StoreImpl.JDBI, Database.uniqueInMemoryUrl()));
+                Duration.ofSeconds(2), Database.uniqueInMemoryUrl()));
         RestAssured.baseURI = "http://localhost";
         RestAssured.port = broker.port();
     }

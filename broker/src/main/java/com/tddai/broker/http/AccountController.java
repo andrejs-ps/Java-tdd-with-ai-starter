@@ -9,6 +9,8 @@ import io.javalin.http.HttpStatus;
 import java.math.BigDecimal;
 import java.util.List;
 
+import static com.tddai.broker.http.Amounts.*;
+
 /**
  * Thin HTTP layer for account set-up.
  * No business logic.
@@ -74,7 +76,7 @@ public class AccountController {
 
     private static AccountJson toJson(AccountView view) {
         List<BalanceJson> balances = view.portfolio().cashBalances().stream()
-                .map(b -> new BalanceJson(b.currency().name(), b.amount()))
+                .map(b -> new BalanceJson(b.currency().name(), twoDecimals(b.amount())))
                 .toList();
         return new AccountJson(view.account().id().toString(), view.account().investor().name(), balances);
     }

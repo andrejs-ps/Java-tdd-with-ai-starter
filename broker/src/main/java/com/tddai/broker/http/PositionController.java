@@ -33,8 +33,9 @@ public class PositionController {
     private void getPositions(Context ctx) {
         var valuations = positionService.getPositions(Requests.accountId(ctx.pathParam("accountId")));
         ctx.json(new PositionsJson(valuations.stream()
-                .map(v -> new PositionJson(v.symbol().value(), v.quantity(), v.costBasis().amount(),
-                        v.marketValue().amount(), v.unrealizedGainLoss().amount()))
+                .map(v -> new PositionJson(v.symbol().value(), v.quantity(), Amounts.twoDecimals(v.costBasis().amount()),
+                        Amounts.twoDecimals(v.marketValue().amount()),
+                        Amounts.twoDecimals(v.unrealizedGainLoss().amount())))
                 .toList()));
     }
 }

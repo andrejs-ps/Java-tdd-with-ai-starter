@@ -25,7 +25,7 @@ class AccountEndpointsTest extends BrokerIntegrationTest {
                 .body("investorName", equalTo("Ada"))
                 .body("balances", hasSize(1))
                 .body("balances[0].currency", equalTo("USD"))
-                .body("balances[0].amount", equalTo(0));
+                .body("balances[0].amount", equalTo(0.0f));
     }
 
     @Test

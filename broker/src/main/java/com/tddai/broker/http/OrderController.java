@@ -16,6 +16,8 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
+import static com.tddai.broker.http.Amounts.*;
+
 /**
  * Thin HTTP layer for orders: parse, delegate to OrderService, map the outcome to a status code.
  */
@@ -63,12 +65,30 @@ public class OrderController {
         // 200: the order reached the exchange and got an answer, filled or killed (a normal outcome for fill or kill).
         // 422: the broker refused to send it at all.
         switch (order.status()) {
-            case FILLED -> ctx.json(new FillJson(order.id(), OrderStatus.FILLED.name(), order.symbol().value(),
-                    order.side().name(), order.quantity(), order.fillPrice().amount(), order.filledAt()));
-            case KILLED -> ctx.json(new KilledJson(order.id(), OrderStatus.KILLED.name(), order.symbol().value(),
-                    order.side().name(), order.quantity(), order.killReason().name()));
+            case FILLED -> ctx.json(
+                    new FillJson(order.id(),
+                    OrderStatus.FILLED.name(),
+                    order.symbol().value(),
+                    order.side().name(),
+                    order.quantity(),
+                    twoDecimals(order.fillPrice().amount()),
+                    order.filledAt())
+            );
+
+            case KILLED -> ctx.json(
+                    new KilledJson(order.id(),
+                            OrderStatus.KILLED.name(),
+                            order.symbol().value(),
+                            order.side().name(),
+                            order.quantity(),
+                            order.killReason().name())
+            );
             case REJECTED -> ctx.status(HttpStatus.UNPROCESSABLE_CONTENT)
-                    .json(new RejectionJson(order.id(), OrderStatus.REJECTED.name(), order.rejectionReason().name()));
+                    .json(new RejectionJson(
+                            order.id(),
+                            OrderStatus.REJECTED.name(),
+                            order.rejectionReason().name())
+                    );
         }
     }
 }

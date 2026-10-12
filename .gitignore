@@ -27,5 +27,5 @@ target/
 ### App data (file-based H2) ###
 data/
 
-### Claude Code local files (dev notes, settings) ###
-.claude/
+#### Claude Code local files (dev notes, settings) ###
+#.claude/

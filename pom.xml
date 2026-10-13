@@ -12,6 +12,7 @@
     <modules>
         <module>exchange</module>
         <module>broker</module>
+        <module>demo</module>
     </modules>
 
     <properties>

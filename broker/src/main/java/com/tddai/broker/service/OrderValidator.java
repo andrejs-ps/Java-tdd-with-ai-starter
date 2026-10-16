@@ -1,30 +1,20 @@
 package com.tddai.broker.service;
 
-import com.tddai.broker.domain.Currency;
 import com.tddai.broker.domain.order.OrderRequest;
 import com.tddai.broker.domain.portfolio.Portfolio;
 import com.tddai.broker.domain.portfolio.Position;
 import com.tddai.broker.domain.order.RejectionReason;
 import com.tddai.broker.domain.order.Side;
-import com.tddai.broker.error.InvalidRequestException;
 
 import java.util.Optional;
 
 /**
- * Order validation rules that need no exchange call and no affordability check
+ * Refuses a sell of more shares than the portfolio holds.
+ * The request's own fields are already valid: {@link OrderRequest} checks them when it is created.
  */
 public class OrderValidator {
 
     public Optional<RejectionReason> validate(OrderRequest request, Portfolio portfolio) {
-        if (request.quantity() <= 0) {
-            throw new InvalidRequestException("quantity must be greater than zero");
-        }
-        if (request.limitPrice().amount().signum() <= 0) {
-            throw new InvalidRequestException("limitPrice must be greater than zero");
-        }
-        if (request.limitPrice().currency() != Currency.USD) {
-            throw new InvalidRequestException("limitPrice must be in USD");
-        }
         if (request.side() == Side.SELL) {
             long held = portfolio.position(request.symbol()).map(Position::quantity).orElse(0L);
             if (held < request.quantity()) {

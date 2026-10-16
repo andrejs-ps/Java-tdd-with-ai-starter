@@ -1,7 +1,9 @@
 package com.tddai.broker.domain.order;
 
+import com.tddai.broker.domain.Currency;
 import com.tddai.broker.domain.Money;
 import com.tddai.broker.domain.Symbol;
+import com.tddai.broker.error.InvalidRequestException;
 
 import java.util.UUID;
 
@@ -18,6 +20,18 @@ public record OrderRequest(
         long quantity,
         Money limitPrice,
         TimeInForce timeInForce) {
+
+    public OrderRequest {
+        if (quantity <= 0) {
+            throw new InvalidRequestException("quantity must be greater than zero");
+        }
+        if (limitPrice.amount().signum() <= 0) {
+            throw new InvalidRequestException("limitPrice must be greater than zero");
+        }
+        if (limitPrice.currency() != Currency.USD) {
+            throw new InvalidRequestException("limitPrice must be in USD");
+        }
+    }
 
     /**
      * A new order request with a freshly created client order id.

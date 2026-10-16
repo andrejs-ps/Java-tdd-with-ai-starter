@@ -48,14 +48,14 @@ Client
   | POST /accounts/{id}/orders  {"symbol":"AAPL","side":"BUY","quantity":10,"limitPrice":250}
   v
 OrderController (http)
-  | parse id + body, validate fields      → OrderRequest
+  | parse id + body                       → OrderRequest (checks quantity > 0, limit > 0, USD limit; else 400)
   v
 OrderService#placeOrder (service)
   |
   |-- PortfolioStore#findPortfolio(accountId) (infra) ........ Portfolio: USD 5000, no positions
   |
   |-- OrderValidator#validate(request, portfolio)
-  |       quantity > 0, limit > 0, USD limit; (sell: enough shares) ..... no rejection
+  |       sell only: enough shares held ................................ no rejection
   |
   |-- BuyingPowerValidator#canAfford(request, portfolio)
   |       250 x 10 = 2500 <= USD 5000 ................................. true

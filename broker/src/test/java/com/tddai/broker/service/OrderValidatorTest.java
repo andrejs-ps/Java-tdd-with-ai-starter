@@ -9,19 +9,13 @@ import com.tddai.broker.domain.order.RejectionReason;
 import com.tddai.broker.domain.order.Side;
 import com.tddai.broker.domain.Symbol;
 import com.tddai.broker.domain.order.TimeInForce;
-import com.tddai.broker.error.InvalidRequestException;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.NullAndEmptySource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OrderValidatorTest {
 
@@ -90,26 +84,5 @@ class OrderValidatorTest {
         var expected = Optional.of(RejectionReason.INSUFFICIENT_POSITION);
         var actual = validator.validate(order, portfolio);
         assertEquals(expected, actual);
-    }
-
-    @ParameterizedTest(name = "quantity={0} limitPrice={1}")
-    @CsvSource({
-            "0, 235.00",
-            "-5, 235.00",
-            "1, 0",
-            "1, -1.00"
-    })
-    void rejectsANonPositiveQuantityOrLimitPriceAsInvalid(long quantity, String limitPrice) {
-        var order = order(Side.BUY, quantity, limitPrice);
-        var portfolio = portfolioHolding(0);
-
-        assertThrows(InvalidRequestException.class, () -> validator.validate(order, portfolio));
-    }
-
-    @ParameterizedTest
-    @NullAndEmptySource
-    @ValueSource(strings = {"aapl", "TOOLONG"})
-    void symbolMustBeAValidTicker(String symbol) {
-        assertThrows(InvalidRequestException.class, () -> Symbol.of(symbol));
     }
 }

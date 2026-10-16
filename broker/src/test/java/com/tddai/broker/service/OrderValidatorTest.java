@@ -10,6 +10,8 @@ import com.tddai.broker.domain.order.Side;
 import com.tddai.broker.domain.Symbol;
 import com.tddai.broker.domain.order.TimeInForce;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.List;
 import java.util.Optional;
@@ -66,20 +68,14 @@ class OrderValidatorTest {
         assertEquals(expected, actual);
     }
 
-    @Test
-    void rejectsASellOfMoreThanHeld() {
-        var order = order(Side.SELL, 11, "235.00");
-        var portfolio = portfolioHolding(10);
-
-        var expected = Optional.of(RejectionReason.INSUFFICIENT_POSITION);
-        var actual = validator.validate(order, portfolio);
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    void rejectsASellOfASymbolNotHeldAtAll() {
-        var order = order(Side.SELL, 1, "235.00");
-        var portfolio = portfolioHolding(0);
+    @ParameterizedTest(name = "held={0} sell={1}")
+    @CsvSource({
+            "10, 11",   // more than held
+            "0, 1"      // symbol not held at all
+    })
+    void rejectsASellOfMoreThanHeld(long held, long sellQuantity) {
+        var order = order(Side.SELL, sellQuantity, "235.00");
+        var portfolio = portfolioHolding(held);
 
         var expected = Optional.of(RejectionReason.INSUFFICIENT_POSITION);
         var actual = validator.validate(order, portfolio);
